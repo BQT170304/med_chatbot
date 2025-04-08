@@ -1,6 +1,6 @@
-# PubMed Screener
+# Medical Research chatbot
 
-PubMed Screener là một ứng dụng hỗ trợ bởi AI, giúp người dùng phân tích và trích xuất thông tin quan trọng từ các tóm tắt nghiên cứu y sinh học. Công cụ này được thiết kế để hỗ trợ các nhà nghiên cứu, bác sĩ và sinh viên trong việc tìm kiếm và hiểu sâu hơn về các chủ đề khoa học phức tạp.
+Medical Research chatbot là một ứng dụng hỗ trợ bởi AI, giúp người dùng phân tích và trích xuất thông tin quan trọng từ các tóm tắt nghiên cứu y sinh học. Công cụ này được thiết kế để hỗ trợ các nhà nghiên cứu, bác sĩ và sinh viên trong việc tìm kiếm và hiểu sâu hơn về các chủ đề khoa học phức tạp.
 
 ## Tính năng chính
 - **Chatbot AI**: Trả lời các câu hỏi khoa học y sinh học.
