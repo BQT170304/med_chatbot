@@ -25,8 +25,10 @@ PubMed Screener là một ứng dụng hỗ trợ bởi AI, giúp người dùng
    ```
 
 4. Tạo file .env và thêm các biến môi trường:
+   ```bash
    GOOGLE_API_KEY="your-google-api-key"
-   GEMINI_MODEL="gemini-2.0-flash-lite"
+   GEMINI_MODEL="your-model"
+   ```
 
 
 ## Cách sử dụng
