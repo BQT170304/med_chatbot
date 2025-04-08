@@ -1,0 +1,25 @@
+### File `.gitignore`
+```plaintext
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+
+# Virtual environments
+env/
+venv/
+.venv/
+.env
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+test*
+*test
+
