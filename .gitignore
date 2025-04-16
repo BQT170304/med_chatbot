@@ -20,6 +20,6 @@ venv/
 .vscode/
 .idea/
 
-test*
-*test
+*.json
+*.sqlite*
 
