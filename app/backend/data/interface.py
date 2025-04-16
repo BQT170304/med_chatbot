@@ -39,9 +39,11 @@ class UserQueryDataStore(ABC):
     def create_document_list(self, abstracts_data: List[ScientificAbstract]) -> List[Document]:
         return [
             Document(
-                page_content=entry.abstract_content, metadata={
-                    "source": entry.doi, "title": entry.title, 
-                    "authors": entry.authors, "year_of_publication": entry.year
+                page_content=entry.abstract_content, 
+                metadata={
+                    "title": entry.title, 
+                    "authors": entry.authors,
+                    "year": entry.year,
                 }
             )
             for entry in abstracts_data

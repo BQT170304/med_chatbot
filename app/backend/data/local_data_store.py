@@ -18,7 +18,7 @@ class LocalJSONStore(UserQueryDataStore):
         self.index_file_path = os.path.join(storage_folder_path, 'index.json')
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
-        self.metadata_index = None
+        self.metadata_index = self._rebuild_index()  # Initialize the index on startup
 
     def get_new_query_id(self) -> str:
         """
@@ -61,8 +61,15 @@ class LocalJSONStore(UserQueryDataStore):
 
             os.makedirs(f'{self.storage_folder_path}/{query_id}', exist_ok=True)
             
+            # Chuyển đổi authors từ list thành string trước khi lưu
+            list_of_abstracts = []
+            for model in abstracts_data:
+                abstract_dict = model.model_dump()
+                if isinstance(abstract_dict.get("authors"), list):
+                    abstract_dict["authors"] = ", ".join(abstract_dict["authors"])
+                list_of_abstracts.append(abstract_dict)
+            
             with open(f"{self.storage_folder_path}/{query_id}/abstracts.json", "w") as file:
-                list_of_abstracts = [model.model_dump() for model in abstracts_data]
                 json.dump(list_of_abstracts, file, indent=4)
 
             with open(f"{self.storage_folder_path}/{query_id}/query_details.json", "w") as file:

@@ -42,8 +42,7 @@ class PubMedAbstractRetriever(AbstractRetriever):
             abstract_formatted = ScientificAbstract(
                 doi=abstract.doi,
                 title=abstract.title,
-                authors=abstract.authors,
-                # authors=', '.join(abstract.authors),
+                authors=', '.join(abstract.authors),
                 year=abstract.year,
                 abstract_content=abstract.abstract
             )
