@@ -27,7 +27,7 @@ def main():
     )
 
     # Define columns - this will make layout split horizontally
-    column_logo, column_app_info, column_answer = st.columns([1, 4, 4])
+    column_logo, column_app_info, column_answer = st.columns([1, 3, 4], gap="medium")
 
     # Place the logo in the first column
     with column_logo:
@@ -49,35 +49,50 @@ def main():
         with st.spinner('Fetching abstracts. This can take a while...'):
             if get_articles:
                 if scientist_question and scientist_question != placeholder_text:
+                    # Normalize query for comparison
+                    normalized_query = scientist_question.strip().lower()
 
-                    # Get abstracts data
-                    retrieved_abstracts = pubmed_client.get_abstract_data(scientist_question)
-                    if not retrieved_abstracts:
-                        st.write('No abstracts found.')
+                    # Check if the query already exists in the database
+                    query_list = data_repository.get_list_of_queries()
+                    existing_query_id = next(
+                        (qid for qid, qtext in query_list.items() if qtext.strip().lower() == normalized_query),
+                        None
+                    )
+
+                    if existing_query_id:
+                        # Query exists, retrieve vector index and skip fetching abstracts
+                        st.write(f"Query already exists. Using existing data for query: '{scientist_question}'")
+                        vector_index = rag_client.get_vector_index_by_user_query(existing_query_id)
                     else:
-                        # Save abstarcts to storage and create vector index
+                        # Query does not exist, fetch data from PubMed
+                        retrieved_abstracts = pubmed_client.get_abstract_data(scientist_question)
+                        if not retrieved_abstracts:
+                            st.write('No abstracts found.')
+                            return
+                        # Save abstracts to storage and create vector index
                         query_id = data_repository.save_dataset(retrieved_abstracts, scientist_question)
                         documents = data_repository.create_document_list(retrieved_abstracts)
                         rag_client.create_vector_index_for_user_query(documents, query_id)
-                        
-                        # Answer the user question and display the answer on the UI directly
                         vector_index = rag_client.get_vector_index_by_user_query(query_id)
-                        retrieved_documents = chat_agent.retrieve_documents(vector_index, scientist_question)
-                        chain = qa_template | llm
-                        
-                        with column_answer:
-                            st.markdown(f"##### Answer to your question: '{scientist_question}'")
-                            st.write(chain.invoke({
-                                "question": scientist_question, 
-                                "retrieved_abstracts": retrieved_documents,
-                            }).content)
+
+                    # Answer the user question and display the answer on the UI directly
+                    retrieved_documents = chat_agent.retrieve_documents(vector_index, scientist_question)
+                    chain = qa_template | llm
+
+                    with column_answer:
+                        st.markdown(f"##### Answer to your question: '{scientist_question}'")
+                        st.write(chain.invoke({
+                            "question": scientist_question,
+                            "retrieved_abstracts": retrieved_documents,
+                        }).content)
 
     # Beginning of the chatbot section
     # Display list of queries to select one to have a conversation about
     query_options = data_repository.get_list_of_queries()
 
     if query_options:
-        st.header("Chat with the abstracts")
+        st.divider()
+        st.header("Chat history")
         selected_query = st.selectbox('Select a past query', options=list(query_options.values()), key='selected_query')
         
         # Initialize chat about some query from the history of user questions

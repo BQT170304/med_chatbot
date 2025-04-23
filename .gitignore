@@ -21,5 +21,5 @@ venv/
 .idea/
 
 *.json
-*.sqlite*
+chromadb_storage*
 

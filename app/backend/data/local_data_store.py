@@ -109,7 +109,7 @@ class LocalJSONStore(UserQueryDataStore):
         """
         index = {}
         query_data_paths = [os.path.join(self.storage_folder_path, name) for name in os.listdir(self.storage_folder_path)
-            if os.path.isdir(os.path.join(self.storage_folder_path, name))]
+            if os.path.isdir(os.path.join(self.storage_folder_path, name)) and re.match(r'query_\d+', name)]
         
         for query_data_path in query_data_paths:
             metadata_path = os.path.join(query_data_path, 'query_details.json')

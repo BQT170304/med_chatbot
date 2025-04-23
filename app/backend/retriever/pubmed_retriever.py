@@ -33,8 +33,8 @@ class PubMedAbstractRetriever(AbstractRetriever):
         """ Fetch PubMed abstracts  """
         self.logger.info(f'Fetching abstract data for following pubmed_ids: {pubmed_ids}')
         scientific_abstracts = []
-        
-        for id in pubmed_ids:
+        max_abstracts = min(10, len(pubmed_ids))  # Limit to 10 abstracts for performance
+        for id in pubmed_ids[:max_abstracts]:
             abstract = self.pubmed_fetch_object.article_by_pmid(id)
             if abstract.abstract is None:
                 continue
