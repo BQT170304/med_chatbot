@@ -1,38 +1,99 @@
 import streamlit as st
+from metapub import PubMedFetcher
 from components.agent import ChatAgent
-from components.prompts import chat_prompt_template
+from components.prompts import chat_prompt_template, qa_template
 from components.llm import llm
+from components.layout_extension import render_app_info
+from backend.retriever import PubMedAbstractRetriever
+from backend.data.local_data_store import LocalJSONStore
+from backend.rag_pipeline.chromadb import ChromaDbRag
+from backend.rag_pipeline.embeddings import GeminiEmbeddingModel
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+# Instantiate objects
+embeddings = GeminiEmbeddingModel(api_key=os.getenv("GOOGLE_API_KEY"))
+pubmed_client = PubMedAbstractRetriever(PubMedFetcher())
+data_repository = LocalJSONStore(storage_folder_path="backend/data")
+rag_client = ChromaDbRag(persist_directory="backend/chromadb_storage", embeddings=embeddings)
+chat_agent = ChatAgent(prompt=chat_prompt_template, llm=llm)
 
 def main():
     st.set_page_config(
-        page_title="Medical Screener",
+        page_title="Pubmed Abstract Screener",
         page_icon='💬',
         layout='wide'
     )
 
-    col1, col2 = st.columns([1, 5])
+    # Define columns - this will make layout split horizontally
+    column_logo, column_app_info, column_answer = st.columns([1, 4, 4])
 
     # Place the logo in the first column
-    with col1:
-        st.image('../assets/logo.webp', width=None)
+    with column_logo:
+        st.image('../assets/logo.webp')
 
     # In the second column, place text explaining the purpose of the app and some example scientific questions that your user might ask.
-    with col2:
-        st.title("PubMed Screener")
-        st.markdown("""
-            PubMed Screener là một công cụ hỗ trợ bởi AI, giúp bạn phân tích và trích xuất thông tin quan trọng từ các tóm tắt nghiên cứu y sinh học. 
-            Công cụ này được thiết kế để hỗ trợ các nhà nghiên cứu, bác sĩ và sinh viên trong việc tìm kiếm và hiểu sâu hơn về các chủ đề khoa học phức tạp.
-            
-            #### Ví dụ một số câu hỏi khoa học về y sinh học:
-            - Làm thế nào các kỹ thuật hình ảnh tiên tiến và các dấu ấn sinh học có thể được sử dụng để chẩn đoán sớm và theo dõi sự tiến triển của các rối loạn thoái hóa thần kinh?
-            - Các ứng dụng tiềm năng của công nghệ tế bào gốc và y học tái tạo trong điều trị các bệnh thoái hóa thần kinh là gì, và những thách thức liên quan là gì?
-            - Vai trò của hệ vi sinh vật đường ruột và trục ruột-não trong cơ chế bệnh sinh của bệnh tiểu đường loại 1 và loại 2 là gì, và làm thế nào để điều chỉnh các tương tác này để mang lại lợi ích điều trị?
-            - Các cơ chế phân tử nào dẫn đến sự phát triển của kháng thuốc trong các liệu pháp ung thư nhắm mục tiêu, và làm thế nào để vượt qua các cơ chế kháng thuốc này?
-        """)
+    with column_app_info:
 
-    # This is the chatbot component
-    chat_agent = ChatAgent(prompt=chat_prompt_template, llm=llm)
-    chat_agent.start_conversation()
+        # Runder app info including example questions as cues for the user
+        render_app_info()
+
+        # Section to enter scientific question
+        st.header("Enter your scientific question!")
+        placeholder_text = "Type your scientific question here..."
+        scientist_question = st.text_input("What is your question?", placeholder_text)
+        get_articles = st.button('Get articles & Answer')
+
+        # Processing user question, fetching data
+        with st.spinner('Fetching abstracts. This can take a while...'):
+            if get_articles:
+                if scientist_question and scientist_question != placeholder_text:
+
+                    # Get abstracts data
+                    retrieved_abstracts = pubmed_client.get_abstract_data(scientist_question)
+                    if not retrieved_abstracts:
+                        st.write('No abstracts found.')
+                    else:
+                        # Save abstarcts to storage and create vector index
+                        query_id = data_repository.save_dataset(retrieved_abstracts, scientist_question)
+                        documents = data_repository.create_document_list(retrieved_abstracts)
+                        rag_client.create_vector_index_for_user_query(documents, query_id)
+                        
+                        # Answer the user question and display the answer on the UI directly
+                        vector_index = rag_client.get_vector_index_by_user_query(query_id)
+                        retrieved_documents = chat_agent.retrieve_documents(vector_index, scientist_question)
+                        chain = qa_template | llm
+                        
+                        with column_answer:
+                            st.markdown(f"##### Answer to your question: '{scientist_question}'")
+                            st.write(chain.invoke({
+                                "question": scientist_question, 
+                                "retrieved_abstracts": retrieved_documents,
+                            }).content)
+
+    # Beginning of the chatbot section
+    # Display list of queries to select one to have a conversation about
+    query_options = data_repository.get_list_of_queries()
+
+    if query_options:
+        st.header("Chat with the abstracts")
+        selected_query = st.selectbox('Select a past query', options=list(query_options.values()), key='selected_query')
+        
+        # Initialize chat about some query from the history of user questions
+        if selected_query:
+            selected_query_id = next(key for key, val in query_options.items() if val == selected_query)
+            vector_index = rag_client.get_vector_index_by_user_query(selected_query_id)
+
+            # Clear chat history when switching query to chat about
+            if 'prev_selected_query' in st.session_state and st.session_state.prev_selected_query != selected_query:
+                chat_agent.reset_history()
+
+            st.session_state.prev_selected_query = selected_query
+
+            # Start chat session
+            chat_agent.start_conversation(vector_index, selected_query)
+
 
 if __name__ == "__main__":
     main()
