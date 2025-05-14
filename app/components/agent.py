@@ -50,7 +50,7 @@ class ChatAgent:
         If no messages are present, adds a default AI message.
         """
         if len(self.history.messages) == 0:
-            self.history.add_ai_message(f"Let's chat about your query: {selected_query}")
+            self.history.add_ai_message(f"Tiếp tục chat với câu hỏi: {selected_query}")
         for msg in self.history.messages:
             st.chat_message(msg.type).write(msg.content)
     
