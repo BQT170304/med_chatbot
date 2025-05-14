@@ -2,9 +2,9 @@ import streamlit as st
 
 
 def render_app_info():
-    st.title("PubMed Screener")
+    st.title("PubMed Searcher")
     st.markdown("""
-        PubMed Screener is a ChatGPT & PubMed powered insight generator from biomedical abstracts.
+        PubMed Searcher là công cụ hỗ trợ truy vấn thông tin y khoa từ dữ liệu PubMed với sự hỗ trợ của AI.
     """)
 
     # Adding custom HTML and CSS for an improved hover-over tooltip

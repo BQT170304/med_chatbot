@@ -9,7 +9,7 @@ def simplify_pubmed_query(scientist_question: str) -> str:
 
 pubmed_query_simplification_prompt = PromptTemplate.from_template("""
     You are an expert in biomedical search queries. Your task is to simplify verbose and detailed user queries into concise and effective search queries suitable for the PubMed database. Focus on capturing the essential scientific or medical elements relevant to biomedical research.
-
+    Rule: You should convert queries into English phrases that are specialized for medical field to be used as search queries in PubMed.
     Here are examples of the queries that need simplification, and what the simplification should look like:
 
     Example 1:
@@ -51,6 +51,16 @@ pubmed_query_simplification_prompt = PromptTemplate.from_template("""
     Verbose Query: Role of gut microbiota in human health and disease
     Is simplification needed here: No.
     Simplified Query: Role of gut microbiota in human health and disease
+
+    Example 9:
+    Verbose Query: Tác động của ô nhiễm không khí đến sức khỏe hô hấp ở trẻ em
+    Is simplification needed here: Yes.
+    Simplified Query: Air pollution impact on respiratory health in children
+
+    Example 10:
+    Verbose Query: Ứng dụng của trí tuệ nhân tạo trong chẩn đoán bệnh ung thư
+    Is simplification needed here: Yes.
+    Simplified Query: Artificial intelligence applications in cancer diagnosis
 
     This is the user query:
     {question}
